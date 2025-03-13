@@ -127,6 +127,10 @@ def get_attraction_id(attractionId: int):
 			result["lat"] = float(result["lat"])
 			result["lng"] = float(result["lng"])
 
+			# 轉圖片為 List
+			
+			result["images"] = json.loads(result["images"])
+
 			return JSONResponse(content={"data": result})
 		
 	except Exception as e:
