@@ -78,14 +78,22 @@ def get_attractions(page: int = Query(0, ge=0), keyword: str = Query(None)):
 
 			limit = 12
 			offset = page * limit
-			next_page = 0
+			next_page = None
 			
 			if keyword:
 				query = """SELECT * FROM attractions WHERE name LIKE %s OR mrt LIKE %s LIMIT %s OFFSET %s"""
 				params = (f"%{keyword}%", f"%{keyword}%", limit, offset)
+				
+				count_query = """SELECT COUNT(*) AS count FROM attractions WHERE name LIKE %s OR mrt LIKE %s"""
+				count_params = (f"%{keyword}%", f"%{keyword}%")
+				
 			else:
 				query = """SELECT * FROM attractions LIMIT %s OFFSET %s"""
 				params = (limit, offset)
+
+				count_query = """SELECT COUNT(*) AS count FROM attractions"""
+				count_params = ()
+				
 			
 			cursor.execute(query, params)
 			results = cursor.fetchall()
@@ -97,14 +105,12 @@ def get_attractions(page: int = Query(0, ge=0), keyword: str = Query(None)):
 			for item in results:
 				item["images"] = json.loads(item["images"])
 
-			# next page
-			cursor.execute("SELECT COUNT(*) AS count FROM attractions")
+			# 判斷 next page
+			cursor.execute(count_query, count_params)
 			total_count = cursor.fetchone()["count"]
-			
+
 			if (offset + limit) < total_count:
 				next_page = page + 1
-			else:
-				next_page = None
 
 			return JSONResponse(content={"nextPage": next_page, "data": results})
 		
@@ -126,9 +132,6 @@ def get_attraction_id(attractionId: int):
 			
 			result["lat"] = float(result["lat"])
 			result["lng"] = float(result["lng"])
-
-			# 轉圖片為 List
-			
 			result["images"] = json.loads(result["images"])
 
 			return JSONResponse(content={"data": result})
