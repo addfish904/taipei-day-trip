@@ -4,9 +4,19 @@ from fastapi.responses import JSONResponse
 import json
 from dotenv import load_dotenv
 import os
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 load_dotenv()
+
+app.add_middleware(
+    CORSMiddleware,
+	allow_origins=["http://13.237.251.22:5500"],
+	allow_credentials=True,
+	allow_methods=["*"],
+	allow_headers=["*"],
+)
+
 db_pool = pooling.MySQLConnectionPool(
     pool_name="mypool",
     pool_size=5,
