@@ -5,8 +5,11 @@ import json
 from dotenv import load_dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 load_dotenv()
 
 app.add_middleware(
@@ -172,9 +175,10 @@ def get_mrts():
 
 
 # Static Pages (Never Modify Code in this Block)
-# @app.get("/", include_in_schema=False)
-# async def index(request: Request):
-# 	return FileResponse("./static/index.html", media_type="text/html")
+@app.get("/", include_in_schema=False)
+async def index(request: Request):
+	return FileResponse("./static/index.html", media_type="text/html")
+
 # @app.get("/attraction/{id}", include_in_schema=False)
 # async def attraction(request: Request, id: int):
 # 	return FileResponse("./static/attraction.html", media_type="text/html")
