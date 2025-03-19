@@ -8,7 +8,7 @@ let isLoading = false;
 
 // 取得景點資料
 async function fetchAttractions(keyword="", page = 0, clear = false) {
-    if (nextPage === null) return;
+    if (nextPage === null || isLoading) return;
     isLoading = true;
 
     try{
@@ -80,7 +80,7 @@ nextBtn.addEventListener("click",() => {
 // 滾動加載
 function onScroll(){
     const { scrollTop, scrollHeight, clientHeight} = document.documentElement;
-    if (scrollTop + clientHeight >= scrollHeight - 50){
+    if (scrollTop + clientHeight >= scrollHeight - 50 && isLoading === false){
         fetchAttractions(searchInput.value.trim(), nextPage, false);
     }
 }

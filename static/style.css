@@ -6,6 +6,10 @@
   box-sizing: border-box;
   border: none;
   outline: none;
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
 }
 body,
 a {
@@ -112,7 +116,8 @@ header nav li {
 }
 .mrts-nav_list {
   display: flex;
-  overflow: scroll;
+  overflow-x: scroll;
+  overflow-y: hidden;
 }
 .mrts-nav_list li {
   flex-shrink: 0;
