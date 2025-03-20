@@ -2,6 +2,7 @@ const attractionsContainer = document.querySelector(".attractions");
 const mrt_ul = document.querySelector(".mrts-nav_list");
 const searchBtn = document.querySelector(".search-button");
 const searchInput = document.querySelector(".search-input")
+const loadMoreTrigger = document.querySelector("#loadMoreTrigger")
 
 let nextPage = 0;
 let isLoading = false;
@@ -78,12 +79,11 @@ nextBtn.addEventListener("click",() => {
 })
 
 // 滾動加載
-function onScroll(){
-    const { scrollTop, scrollHeight, clientHeight} = document.documentElement;
-    if (scrollTop + clientHeight >= scrollHeight - 50 && isLoading === false){
+const observer = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && !isLoading) {
         fetchAttractions(searchInput.value.trim(), nextPage, false);
     }
-}
+}, { threshold: 1.0 });
 
 // 點擊搜尋按鈕
 searchBtn.addEventListener("click", () => {
@@ -91,7 +91,6 @@ searchBtn.addEventListener("click", () => {
     fetchAttractions(searchInput.value.trim(), nextPage, true);
 })
 
-window.addEventListener("scroll", onScroll);
-
 fetchAttractions()
 fetchMrts()
+observer.observe(loadMoreTrigger)

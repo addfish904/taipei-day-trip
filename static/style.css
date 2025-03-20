@@ -6,10 +6,6 @@
   box-sizing: border-box;
   border: none;
   outline: none;
-  scrollbar-width: none;
-}
-*::-webkit-scrollbar {
-  display: none;
 }
 body,
 a {
@@ -118,6 +114,10 @@ header nav li {
   display: flex;
   overflow-x: scroll;
   overflow-y: hidden;
+  scrollbar-width: none;
+}
+.mrts-nav_list::-webkit-scrollbar {
+  display: none;
 }
 .mrts-nav_list li {
   flex-shrink: 0;
