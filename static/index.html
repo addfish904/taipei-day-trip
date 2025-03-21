@@ -3,9 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Index</title>
+  <title>台北一日遊</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/script.js" defer></script>
 </head>
 <body>
-  
+  <header>
+    <h1 id="logo"><a href="/static/index.html">台北一日遊</a></h1>
+    <nav>
+      <li class="header_nav"><a href="#">預定行程</a></li>
+      <li class="header_nav"><a href="#">登入/註冊</a></li>
+    </nav>
+  </header>
+  <div class="hero">
+    <div class="hero_content">
+      <h2 class="hero_title">輕鬆享受台北一日悠閒</h2>
+      <p class="hero_text">探索每個角落，體驗城市的深度旅遊行程</p>
+      <div class="hero_search">
+        <input type="text" class="search-input" placeholder="輸入景點名稱查詢">
+        <button class="search-button">
+          <div class="search-icon"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="mrts-nav">
+      <button class="mrts-nav-arrow-left"></button>
+      <ul class="mrts-nav_list"></ul>
+      <button class="mrts-nav-arrow-right"></button>
+    </div>
+    <div class="attractions"></div>
+    <div id="loadMoreTrigger"></div>
+  </div>
+  <div class="footer">
+    <p>COPYRIGHT © 2021 台北一日遊</p>
+  </div>
 </body>
 </html>
