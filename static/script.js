@@ -1,5 +1,5 @@
 const isHomePage = window.location.pathname.includes("index.html") || window.location.pathname === "/";
-const isAttractionPage = window.location.pathname.includes("attraction.html");
+const isAttractionPage = window.location.pathname.includes("/attraction");
 
 
 if (isHomePage){
@@ -37,7 +37,7 @@ if (isHomePage){
             let div = document.createElement("div")
             div.classList.add("attraction_card");
             div.innerHTML = `
-                <a href="/static/attraction.html?id=${attraction.id}">
+                <a href="/attraction/${attraction.id}">
                     <div class="attraction_title">
                         <img src="${attraction.images[0]}" alt="${attraction.name}"></img>
                         <p>${attraction.name}</p>
@@ -109,8 +109,8 @@ if (isAttractionPage){
 
     // 取得景點內頁資料
     async function fetchAttractionById() {
-        const urlParams = new URLSearchParams(window.location.search);
-        let attractionId = urlParams.get("id");
+        const attractionId = window.location.pathname.split("/").pop();
+        
         try {
             const response = await fetch(`http://13.237.251.22:8000/api/attraction/${attractionId}`);
             const data = await response.json();
