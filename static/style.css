@@ -196,7 +196,7 @@ header nav li {
 /*----------attraction----------*/
 .main_section {
   display: flex;
-  padding: 40px 0;
+  padding: 40px 10px;
   margin-bottom: 40px;
   gap: 30px;
   align-items: center;
@@ -321,13 +321,19 @@ input[type="date"] {
   background: #333;
 }
 
-@media (min-width: 601px) and (max-width: 1200px) {
+@media (max-width: 600px) {
   .main_section {
     flex-direction: column;
+    padding: 0 0 40px 0;
+  }
+  .profile {
     padding: 10px;
   }
   .carousel,
   .profile {
     width: 100%;
+  }
+  .carousel-slide {
+    height: 350px;
   }
 }
