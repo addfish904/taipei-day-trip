@@ -325,6 +325,7 @@ input[type="date"] {
   .main_section {
     flex-direction: column;
     padding: 0 0 40px 0;
+    gap: 20px;
   }
   .profile {
     padding: 10px;
