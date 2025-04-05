@@ -248,4 +248,157 @@ if (isAttractionPage){
     fetchAttractionById();
 }
 
+const login = document.querySelector(".nav_login a")
+const overlay = document.querySelector(".overlay")
+const loginForm = document.querySelector(".login-form")
+const signupForm = document.querySelector(".signup-form")
+const popupCloseBtns = document.querySelectorAll(".popup-close")
+const showSignup = document.getElementById("showSignup")
+const showLogin = document.getElementById("showLogin")
+const loginNotice = document.querySelector(".login-form_notice");
+const signupNotice = document.querySelector(".signup-form_notice");
 
+// 開啟登入彈窗
+function showLoginPopup(){
+    overlay.style.display = "block";
+    loginForm.classList.add("show");
+    document.body.style.overflow = "hidden";
+    signupForm.style.display = "none";
+    loginNotice.textContent = " ";
+}
+
+// 切換註冊彈窗
+showSignup.addEventListener("click", ()=>{
+    signupForm.style.display = "block";
+    loginForm.classList.remove("show");
+    document.body.style.overflow = "hidden";
+    signupNotice.textContent = " ";
+})
+
+// 切回登入彈窗
+showLogin.addEventListener("click", () => showLoginPopup());
+
+// 關閉彈窗
+popupCloseBtns.forEach((popupCloseBtn)=>{
+    popupCloseBtn.addEventListener("click",()=>{
+        overlay.style.display = "none";
+        loginForm.classList.remove("show");
+        signupForm.style.display = "none";
+        document.body.style.overflow = "";
+    })
+})
+
+const API_URL = "http://13.237.251.22:8000/api/user";
+
+// 註冊會員
+document.getElementById("signup").addEventListener("click",
+    async function userSignup(event) {
+        event.preventDefault();
+
+        let name = document.querySelector('.signup-form input[name="name"]').value.trim();
+        let email = document.querySelector('.signup-form input[name="email"]').value.trim();
+        let password = document.querySelector('.signup-form input[name="password"]').value.trim();
+
+        let missingFields = [];
+
+        if (!name) missingFields.push("姓名");
+        if (!email) missingFields.push("電子信箱");
+        if (!password) missingFields.push("密碼");
+
+        if (missingFields.length > 0) {
+            signupNotice.innerHTML = `請輸入${missingFields.join("、")}`;
+            signupNotice.style.color = "red";
+            return;
+        }
+
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password })
+        });
+
+        const result = await response.json();
+        console.log(result)
+        if (response.ok) {
+            signupNotice.textContent = `註冊成功，請登入系統`;
+            signupNotice.style.color = "green";
+        } else {
+            signupNotice.textContent = result.detail;
+            signupNotice.style.color = "red";
+        }
+    }
+)
+
+// 取得登入會員資訊
+async function getUserInfo() {
+    try{
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(`${API_URL}/auth`, {
+            method: "GET",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const result = await response.json();
+
+        if (result === null) {
+            login.textContent = "登入/註冊"
+            login.onclick = () => showLoginPopup();
+        } else {
+            login.textContent = "登出系統"
+            login.onclick = () => logout();
+        }
+    }catch (error){
+        console.error("無法獲取使用者登入狀態：", error);
+    }
+}
+getUserInfo()
+
+// 登入會員
+document.getElementById("login").addEventListener("click", 
+    async function userLogin(event) {
+        event.preventDefault();
+
+        let email = document.querySelector('.login-form input[name="email"]').value.trim();
+        let password = document.querySelector('.login-form input[name="password"]').value.trim();
+
+        // 驗證輸入欄位
+        if (!email || !password) {
+            loginNotice.innerHTML = `請輸入電子信箱和密碼`;
+            loginNotice.style.color = "red";
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/auth`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({ username: email, password: password })
+            });
+            const result = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem("token", result.access_token);
+                loginNotice.innerHTML = `登入成功`;
+                loginNotice.style.color = "green";
+                setTimeout(() => {
+                    location.reload();
+                }, 500);
+                
+            } else {
+                loginNotice.innerHTML = `${result.detail}`;
+                loginNotice.style.color = "red";
+            }
+        } catch (error) {
+            console.error("發生錯誤:", error);
+            alert("發生錯誤，請稍後再試");
+        }
+    }
+);
+
+// 登出（清除token）
+async function logout() {
+    localStorage.removeItem("token");
+    location.reload();
+    login.textContent = "登入/註冊";
+    login.onclick = () => showLoginPopup();
+}
