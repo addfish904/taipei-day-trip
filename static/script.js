@@ -318,12 +318,11 @@ document.getElementById("signup").addEventListener("click",
         });
 
         const result = await response.json();
-        console.log(result)
         if (response.ok) {
             signupNotice.textContent = `註冊成功，請登入系統`;
             signupNotice.style.color = "green";
         } else {
-            signupNotice.textContent = result.detail;
+            signupNotice.textContent = result.message;
             signupNotice.style.color = "red";
         }
     }
@@ -340,7 +339,7 @@ async function getUserInfo() {
         });
         const result = await response.json();
 
-        if (result === null) {
+        if (result.data === null) {
             login.textContent = "登入/註冊"
             login.onclick = () => showLoginPopup();
         } else {
@@ -377,7 +376,7 @@ document.getElementById("login").addEventListener("click",
             const result = await response.json();
 
             if (response.ok) {
-                localStorage.setItem("token", result.access_token);
+                localStorage.setItem("token", result.token);
                 loginNotice.innerHTML = `登入成功`;
                 loginNotice.style.color = "green";
                 setTimeout(() => {
@@ -385,7 +384,7 @@ document.getElementById("login").addEventListener("click",
                 }, 500);
                 
             } else {
-                loginNotice.innerHTML = `${result.detail}`;
+                loginNotice.innerHTML = `${result.message}`;
                 loginNotice.style.color = "red";
             }
         } catch (error) {

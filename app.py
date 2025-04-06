@@ -196,56 +196,73 @@ def create_access_token(data: dict, expires_minutes: int = 30):
 
 # 註冊會員
 @app.post("/api/user")
-def register_user(request: dict):
-    name = request["name"]
-    email = request["email"]
-    password = request["password"]
+async def register_user(request: Request):
+	try:
+		data = await request.json()
+		name = data["name"]
+		email = data["email"]
+		password = data["password"]
 
-    hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+		hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-    with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
-        cursor.execute("SELECT id FROM members WHERE email = %s", (email,))
-        if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="Email 已被註冊")
+		with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
+			cursor.execute("SELECT id FROM members WHERE email = %s", (email,))
+			if cursor.fetchone():
+				return JSONResponse(status_code=400, content={"error": True, "message": "Email 已被註冊"})
+			cursor.execute("INSERT INTO members (name, email, password) VALUES (%s, %s, %s)", (name, email, hashed_password))
+			conn.commit()
 
-        cursor.execute("INSERT INTO members (name, email, password) VALUES (%s, %s, %s)", (name, email, hashed_password))
-        conn.commit()
-
-    return {"message": "註冊成功"}
+		return {"ok": True}
+	
+	except Exception as e:
+		return JSONResponse(
+			status_code=500,
+			content={"error": True, "message": "伺服器發生錯誤，請稍後再試"}
+		)
 
 # 取得當前登入的會員資訊
 @app.get("/api/user/auth")
 def get_user_info(token: str = Depends(oauth2_scheme)):
 	if not token:
-		return None
+		return {"data": None}
 
 	try:
 		payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-		return {"id": payload["sub"], "name": payload["name"], "email": payload["email"]}
+		return  {"data": {
+            "id": payload["id"],
+            "name": payload["name"],
+            "email": payload["email"]
+        }}
 	except jwt.ExpiredSignatureError:
-		return None
+		return {"data": None}
 	except jwt.InvalidTokenError:
-		return None
+		return {"data": None}
 
 # 登入會員
 @app.put("/api/user/auth")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    email = form_data.username
-    password = form_data.password
+	try:
+		email = form_data.username
+		password = form_data.password
 
-    with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
-        cursor.execute("SELECT id, name, password FROM members WHERE email = %s", (email,))
-        user = cursor.fetchone()
+		with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
+			cursor.execute("SELECT id, name, password FROM members WHERE email = %s", (email,))
+			user = cursor.fetchone()
 
-    if not user or not bcrypt.checkpw(password.encode("utf-8"), user["password"].encode("utf-8")):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="帳號或密碼錯誤")
+		if not user or not bcrypt.checkpw(password.encode("utf-8"), user["password"].encode("utf-8")):
+			return JSONResponse(status_code=400, content={"error": True, "message": "帳號或密碼錯誤"})
 
-    access_token = create_access_token({
-		"sub": str(user["id"]),
-		"name": user["name"],
-		"email": email
-	})
-    return {"access_token": access_token, "token_type": "bearer"}
+		token = create_access_token({
+			"id": str(user["id"]),
+			"name": user["name"],
+			"email": email
+		})
+		return {"token": token}
+	except Exception as e:
+		return JSONResponse(
+			status_code=500,
+			content={"error": True, "message": "伺服器發生錯誤，請稍後再試"}
+		)
 
 # Static Pages (Never Modify Code in this Block)
 @app.get("/", include_in_schema=False)
