@@ -237,13 +237,17 @@ def get_user_info(token: str = Depends(oauth2_scheme)):
 		return {"data": None}
 	except jwt.InvalidTokenError:
 		return {"data": None}
+	except Exception:
+		return {"data": None}
+
 
 # 登入會員
 @app.put("/api/user/auth")
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(request: Request):
 	try:
-		email = form_data.username
-		password = form_data.password
+		data = await request.json()
+		email = data["email"]
+		password = data["password"]
 
 		with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
 			cursor.execute("SELECT id, name, password FROM members WHERE email = %s", (email,))
@@ -258,6 +262,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 			"email": email
 		})
 		return {"token": token}
+	
 	except Exception as e:
 		return JSONResponse(
 			status_code=500,
