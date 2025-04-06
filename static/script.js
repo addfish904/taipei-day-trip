@@ -262,6 +262,7 @@ const signupNotice = document.querySelector(".signup-form_notice");
 function showLoginPopup(){
     overlay.style.display = "block";
     loginForm.classList.add("show");
+    loginForm.style.visibility = "visible"
     document.body.style.overflow = "hidden";
     signupForm.style.display = "none";
     loginNotice.textContent = " ";
@@ -283,6 +284,7 @@ popupCloseBtns.forEach((popupCloseBtn)=>{
     popupCloseBtn.addEventListener("click",()=>{
         overlay.style.display = "none";
         loginForm.classList.remove("show");
+        loginForm.style.visibility = "hidden"
         signupForm.style.display = "none";
         document.body.style.overflow = "";
     })
