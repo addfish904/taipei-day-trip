@@ -264,6 +264,7 @@ async def login(request: Request):
 		return {"token": token}
 	
 	except Exception as e:
+		print(f"Login error: {e}")
 		return JSONResponse(
 			status_code=500,
 			content={"error": True, "message": "伺服器發生錯誤，請稍後再試"}

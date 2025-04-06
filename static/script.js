@@ -372,9 +372,9 @@ document.getElementById("login").addEventListener("click",
         try {
             const response = await fetch(`${API_URL}/auth`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams({ username: email, password: password })
-            });
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email, password: password })
+            })
             const result = await response.json();
 
             if (response.ok) {
