@@ -1,16 +1,26 @@
 from fastapi import *
 from mysql.connector import pooling
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse,FileResponse
 import json
 from dotenv import load_dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+import jwt
+import bcrypt
+from datetime import datetime, timedelta
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 load_dotenv()
+
+# 設定 JWT 參數
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/user/auth")
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,6 +30,7 @@ app.add_middleware(
 	allow_headers=["*"],
 )
 
+# MySQL 連線池
 db_pool = pooling.MySQLConnectionPool(
     pool_name="mypool",
     pool_size=5,
@@ -173,6 +184,91 @@ def get_mrts():
 		error_message = str(e)
 		return JSONResponse(content={"error": True, "message": error_message}, status_code = 500)
 
+
+# 建立 JWT Token
+def create_access_token(data: dict, expires_minutes: int = 30):
+    to_encode = data.copy()
+    expire = datetime.now() + timedelta(minutes=expires_minutes)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+# 註冊會員
+@app.post("/api/user")
+async def register_user(request: Request):
+	try:
+		data = await request.json()
+		name = data["name"]
+		email = data["email"]
+		password = data["password"]
+
+		hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+		with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
+			cursor.execute("SELECT id FROM members WHERE email = %s", (email,))
+			if cursor.fetchone():
+				return JSONResponse(status_code=400, content={"error": True, "message": "Email 已被註冊"})
+			cursor.execute("INSERT INTO members (name, email, password) VALUES (%s, %s, %s)", (name, email, hashed_password))
+			conn.commit()
+
+		return {"ok": True}
+	
+	except Exception as e:
+		return JSONResponse(
+			status_code=500,
+			content={"error": True, "message": "伺服器發生錯誤，請稍後再試"}
+		)
+
+# 取得當前登入的會員資訊
+@app.get("/api/user/auth")
+def get_user_info(token: str = Depends(oauth2_scheme)):
+	if not token:
+		return {"data": None}
+
+	try:
+		payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+		return  {"data": {
+            "id": payload["id"],
+            "name": payload["name"],
+            "email": payload["email"]
+        }}
+	except jwt.ExpiredSignatureError:
+		return {"data": None}
+	except jwt.InvalidTokenError:
+		return {"data": None}
+	except Exception:
+		return {"data": None}
+
+
+# 登入會員
+@app.put("/api/user/auth")
+async def login(request: Request):
+	try:
+		data = await request.json()
+		email = data["email"]
+		password = data["password"]
+
+		with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
+			cursor.execute("SELECT id, name, password FROM members WHERE email = %s", (email,))
+			user = cursor.fetchone()
+
+		if not user or not bcrypt.checkpw(password.encode("utf-8"), user["password"].encode("utf-8")):
+			return JSONResponse(status_code=400, content={"error": True, "message": "帳號或密碼錯誤"})
+
+		token = create_access_token({
+			"id": str(user["id"]),
+			"name": user["name"],
+			"email": email
+		})
+		return {"token": token}
+	
+	except Exception as e:
+		print(f"Login error: {e}")
+		return JSONResponse(
+			status_code=500,
+			content={"error": True, "message": "伺服器發生錯誤，請稍後再試"}
+		)
 
 # Static Pages (Never Modify Code in this Block)
 @app.get("/", include_in_schema=False)
