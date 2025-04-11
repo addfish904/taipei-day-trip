@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attraction</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/script.js" defer></script>
+  <script type="module" src="/static/js/main.js" defer></script>
 </head>
 <body>
   <div class="overlay"></div>
@@ -17,7 +17,7 @@
       <input type="email" placeholder="輸入電子信箱" name="email">
       <input type="password" placeholder="輸入密碼" name="password">
       <button type="submit" class="popup-btn" id="login">登入帳戶</button>
-      <p class="popup-notice"></p>
+      <p class="login-form_notice"></p>
       <p>還沒有帳戶？<a href="#" id="showSignup">點此註冊</a></p>
     </form>
   </div>
@@ -30,7 +30,7 @@
       <input type="email" placeholder="輸入電子信箱" name="email">
       <input type="password" placeholder="輸入密碼" name="password">
       <button type="submit" class="popup-btn" id="signup">註冊新帳戶</button>
-      <p class="popup-notice"></p>
+      <p class="signup-form_notice"></p>
       <p>已經有帳戶了？<a href="#" id="showLogin">點此登入</a></p>
     </form>
   </div>
@@ -38,7 +38,7 @@
     <div class="header_content">
       <h1 id="logo"><a href="/">台北一日遊</a></h1>
       <nav>
-        <li><a href="#">預定行程</a></li>
+        <li class="nav_booking"><a href="#">預定行程</a></li>
         <li class="nav_login"><a href="#"></a></li>
       </nav>
     </div>

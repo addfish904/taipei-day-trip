@@ -232,7 +232,8 @@ header nav li {
 .booking-form label {
   margin-right: 5px;
 }
-.booking-form button {
+.booking-form button,
+#confirm button {
   color: #fff;
   background-color: #448899;
   padding: 10px 20px;
@@ -415,4 +416,105 @@ input[type="date"] {
   height: 16px;
   flex-shrink: 0;
   background: url(/static/images/close.png) no-repeat center / cover;
+}
+
+/* Booking */
+.booking-info {
+  display: flex;
+  flex-direction: column;
+  padding: 0 110px;
+  gap: 15px;
+}
+.booking-info input {
+  width: 200px;
+  border: 1px solid #e8e8e8;
+  padding: 10px;
+  border-radius: 5px;
+}
+h2 {
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.booking-info > p {
+  padding: 5px 0;
+  font-weight: 700;
+}
+.booking-info label {
+  width: fit-content;
+}
+hr {
+  height: 1px;
+  background: #e8e8e8;
+  margin: 40px 0;
+}
+#confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 22px;
+  padding-bottom: 22px;
+  padding: 0 110px;
+}
+#confirm button {
+  margin: 0;
+}
+.order-section {
+  margin: 40px 0 30px;
+  padding: 0 110px;
+}
+
+.order-box {
+  display: flex;
+  gap: 30px;
+  position: relative;
+}
+.order-delete {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 30px;
+  background: url(/static/images/icon_delete.png) no-repeat center/contain;
+}
+.order-pic {
+  width: 250px;
+  height: 200px;
+}
+.order-section h3 {
+  color: #448899;
+  margin-bottom: 20px;
+}
+.order-infor ul {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.order-infor li {
+  display: flex;
+  gap: 5px;
+}
+.account {
+  font-weight: 700;
+}
+@media (max-width: 600px) {
+  .order-section,
+  .booking-info,
+  #confirm {
+    padding: 0 10px 0;
+  }
+  .order-box {
+    flex-direction: column;
+    padding-bottom: 20px;
+  }
+  .order-pic {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+  .order-delete {
+    top: auto;
+    bottom: 0;
+  }
 }
