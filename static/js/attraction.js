@@ -1,4 +1,5 @@
-// attraction.js
+import { showLoginPopup } from "./auth.js"
+
 const API_URL = "http://13.237.251.22:8000/api";
 
 export function initAttractionPage() {

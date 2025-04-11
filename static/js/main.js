@@ -8,9 +8,9 @@ initAuthPopup();
 initAuthStatus();
 
 if (path.includes("index.html") || path === "/") {
-  initHomePage();
+    initHomePage();
 } else if (path.includes("/attraction")) {
-  initAttractionPage();
+    initAttractionPage();
 } else if (path.includes("/booking")) {
-  initBookingPage();
+    initBookingPage();
 }

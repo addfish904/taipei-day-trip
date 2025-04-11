@@ -1,6 +1,3 @@
-// home.js
-import { getAttractions, getMrts } from './api.js';
-
 const API_URL = "http://13.237.251.22:8000/api";
 
 export function initHomePage() {
@@ -19,10 +16,12 @@ export function initHomePage() {
     if (nextPage === null || isLoading) return;
     isLoading = true;
 
-    try {
-      const data = await getAttractions(keyword, page);
+    try{
+      const response = await fetch(`${API_URL}/attractions?keyword=${keyword}&page=${page}`);
+      const data = await response.json();
+
       if (clear) attractionsContainer.innerHTML = "";
-      renderAttractions(data.data);
+      renderAttractions(data.data); 
       nextPage = data.nextPage;
     } catch (error) {
       console.error("Error fetching attractions:", error);
@@ -54,7 +53,10 @@ export function initHomePage() {
   // 取得捷運站資料
   async function renderMrts() {
     try {
-      const mrts = await getMrts();
+        let response = await fetch(`${API_URL}/mrts`);
+        let data = await response.json();
+        
+        let mrts = data.data;
       mrts.forEach(mrt => {
         const li = document.createElement("li");
         li.textContent = mrt;

@@ -1,4 +1,3 @@
-// auth.js
 const API_URL = "http://13.237.251.22:8000/api";
 
 const login = document.querySelector(".nav_login a");
@@ -86,9 +85,10 @@ export function initAuthPopup() {
       const response = await fetch(`${API_URL}/user/auth`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: email, password: password })
       });
       const result = await response.json();
+      
       if (response.ok) {
         localStorage.setItem("token", result.token);
         loginNotice.textContent = "登入成功";

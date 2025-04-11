@@ -298,7 +298,7 @@ async def create_booking(
 		payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 		user_id = payload.get("id")
 		if not user_id:
-			raise HTTPException(status_code=403, detail="未授權的存取")
+			return JSONResponse(status_code=403, content={"error": True, "message": "未授權的存取"})
 
 		with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
 			cursor.execute("SELECT id FROM bookings WHERE member_id = %s", (user_id,))
@@ -330,9 +330,6 @@ async def create_booking(
 
 			conn.commit()
 		return {"ok": True}
-	
-	# except ExpiredSignatureError:
-	# 	return JSONResponse(status_code=401, content={"error": True, "message": "Signature has expired"})
 	except HTTPException:
 		return JSONResponse(status_code=400, content={"error": True, "message": "建立失敗，輸入不正確或其他原因"})
 	except Exception:
@@ -345,7 +342,7 @@ def get_booking(token: str = Depends(oauth2_scheme)):
 	payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 	user_id = payload["id"]
 	if not user_id:
-		raise HTTPException(status_code=403, detail="未授權的存取")
+		return JSONResponse(status_code=403, content={"error": True, "message": "未授權的存取"})
 	
 	with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
 		cursor.execute("""
@@ -384,7 +381,7 @@ def delete_booking(token: str = Depends(oauth2_scheme)):
 	user_id = payload["id"]
 
 	if not user_id:
-		raise HTTPException(status_code=403, detail="未授權的存取")
+		return JSONResponse(status_code=403, content={"error": True, "message": "未授權的存取"})
 
 	with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
 		cursor.execute("DELETE FROM bookings WHERE member_id = %s",(user_id,))
