@@ -4,8 +4,50 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Booking</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script type="module" src="/static/js/main.js" defer></script>
 </head>
 <body>
-  
+  <div class="overlay"></div>
+  <div class="login-form">
+    <form action="/login" method="post" class="popup-block">
+      <h2>登入會員帳號</h2>
+      <button type="button" class="popup-close"></button>
+      <input type="email" placeholder="輸入電子信箱" name="email">
+      <input type="password" placeholder="輸入密碼" name="password">
+      <button type="submit" class="popup-btn" id="login">登入帳戶</button>
+      <p class="login-form_notice"></p>
+      <p>還沒有帳戶？<a href="#" id="showSignup">點此註冊</a></p>
+    </form>
+  </div>
+  <div class="signup-form">
+    <form action="/signup" method="post" class="popup-block">
+      <h2>註冊會員帳號</h2>
+      <button type="button" class="popup-close"></button>
+      <input type="text" placeholder="輸入姓名" name="name">
+      <input type="email" placeholder="輸入電子信箱" name="email">
+      <input type="password" placeholder="輸入密碼" name="password">
+      <button type="submit" class="popup-btn" id="signup">註冊新帳戶</button>
+      <p class="signup-form_notice"></p>
+      <p>已經有帳戶了？<a href="#" id="showLogin">點此登入</a></p>
+    </form>
+  </div>
+  <header>
+    <div class="header_content">
+      <h1 id="logo"><a href="/">台北一日遊</a></h1>
+      <nav>
+        <li class="nav_booking"><a href="#">預定行程</a></li>
+        <li class="nav_login"><a href="#"></a></li>
+      </nav>
+    </div>
+  </header>
+  <div class="main">
+    <div class="order-section">
+    </div>
+    <div class="infor-section"></div>
+  </div>
+  <div class="footer">
+    <p>COPYRIGHT © 2021 台北一日遊</p>
+  </div>
 </body>
 </html>
