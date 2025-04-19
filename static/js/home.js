@@ -74,6 +74,7 @@ export function initHomePage() {
 
   // 點擊搜尋按鈕
   searchBtn.addEventListener("click", () => {
+    event.preventDefault();
     nextPage = 0;
     fetchAttractions(searchInput.value.trim(), nextPage, true);
   });

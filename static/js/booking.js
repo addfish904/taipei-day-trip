@@ -19,6 +19,8 @@ export function initBookingPage() {
     }
 
     async function loadBookingsPage(token, userName) {
+        let bookingData = null;
+
         const response = await fetch(`${API_URL}/booking`, {
             method: "GET",
             headers: { "Authorization": `Bearer ${token}` }
@@ -33,17 +35,19 @@ export function initBookingPage() {
             orderSection.innerHTML += `<p>目前沒有任何待預訂的行程</p>`;
             inforSection.innerHTML = " ";
         } else {
+            bookingData = result.data;
+
             orderSection.innerHTML += `
                 <div class="order-box">
                 <div class="order-delete"></div>
-                <img src="${result.data.attraction.image}" class="order-pic"></img>
+                <img src="${bookingData.attraction.image}" class="order-pic"></img>
                 <div class="order-infor">
-                    <h3>台北一日遊：${result.data.attraction.name}</h3>
+                    <h3>台北一日遊：${bookingData.attraction.name}</h3>
                     <ul>
-                    <li><span style="font-weight: 700">日期：</span><p>${result.data.date}</p></li>
-                    <li><span style="font-weight: 700">時間：</span><p>${result.data.time === 'morning' ? '早上 9 點到下午 4 點' : '下午 2 點到晚上 9 點'}</p></li>
-                    <li><span style="font-weight: 700">費用：</span><p>新台幣 ${result.data.price} 元</p></li>
-                    <li><span style="font-weight: 700">地點：</span><p>${result.data.attraction.address}</p></li>
+                    <li><span style="font-weight: 700">日期：</span><p>${bookingData.date}</p></li>
+                    <li><span style="font-weight: 700">時間：</span><p>${bookingData.time === 'morning' ? '早上 9 點到下午 4 點' : '下午 2 點到晚上 9 點'}</p></li>
+                    <li><span style="font-weight: 700">費用：</span><p>新台幣 ${bookingData.price} 元</p></li>
+                    <li><span style="font-weight: 700">地點：</span><p>${bookingData.attraction.address}</p></li>
                     </ul>
                 </div>
                 </div>
@@ -63,19 +67,28 @@ export function initBookingPage() {
                 <div class="payment">
                 <form class="booking-info">
                     <h2>信用卡付款資訊</h2>
-                    <label>卡片號碼：<input type="text" placeholder="**** **** **** ****" name="card-number"></label>
-                    <label>過期時間：<input type="text" placeholder="MM / YY" name="expiry_date"></label>
-                    <label>驗證密碼：<input type="password" placeholder="CVV" name="cvv"></label>
+                    <div class="tp-container">
+                        <label>卡片號碼：</label>
+                        <div class="tpfield" id="card-number"></div>
+                    </div>
+                    <div class="tp-container">
+                        <label>過期時間：</label>
+                        <div class="tpfield" id="card-expiration-date"></div>
+                    </div>
+                    <div class="tp-container">
+                        <label>驗證密碼：</label>
+                        <div class="tpfield" id="card-ccv"></div>
+                    </div>
                 </form>
                 </div>
                 <hr>
                 <div id="confirm">
                 <p class="account"></p>
-                <button type="submit">確認訂購並付款</button>
+                <button type="submit" id="submit-button">確認訂購並付款</button>
                 </div>
             `;
             const account = document.querySelector(".account");
-            account.textContent = `總價：新台幣${result.data.price}元`;
+            account.textContent = `總價：新台幣${bookingData.price}元`;
 
             const bookingDeleteBtn = document.querySelector(".order-delete");
             bookingDeleteBtn.addEventListener("click", async () => {
@@ -92,5 +105,101 @@ export function initBookingPage() {
                 }
             });
         }
+        // 初始化 TapPay
+        TPDirect.setupSDK(
+            159886,
+            'app_rRt9WwYbSTDRL1HuE50SDykBxuJk6aLzRGBIPda2atI5CvLuaOZrMYGwpbjy',
+            'sandbox'
+        );
+  
+        // 設定卡片欄位
+        TPDirect.card.setup({
+            fields: {
+            number: {
+                element: '#card-number',
+                placeholder: '**** **** **** ****'
+            },
+            expirationDate: {
+                element: '#card-expiration-date',
+                placeholder: 'MM / YY'
+            },
+            ccv: {
+                element: '#card-ccv',
+                placeholder: 'CVV'
+            }
+            },
+            styles: {
+            'input': { 'color': '#333', 'font-size': '16px' },
+            ':focus': { 'color': 'black' },
+            }
+        });
+        
+        // 點擊付款按鈕
+        document.getElementById("submit-button").addEventListener("click", async () => {
+            // 確認表單是否可以取得 Prime
+            const tappayStatus = TPDirect.card.getTappayFieldsStatus();
+            if (!tappayStatus.canGetPrime) {
+                alert("信用卡資訊錯誤，請重新確認！");
+                return;
+            }
+        
+            TPDirect.card.getPrime(async (result) => {
+            if (result.status !== 0) {
+                alert("取得 Prime 失敗！");
+                return;
+            }
+        
+            const prime = result.card.prime;
+        
+            // 取得聯絡資訊
+            const contactForm = document.querySelector(".contact-form form");
+            const name = contactForm.querySelector("input[name='name']").value;
+            const email = contactForm.querySelector("input[name='email']").value;
+            const phone = contactForm.querySelector("input[name='tel']").value;
+        
+            if (!name || !email || !phone) {
+                alert("請完整填寫聯絡資料！");
+                return;
+            }
+
+            // 傳送至後端建立訂單
+            const orderResponse = await fetch(`${API_URL}/orders`, {
+                method: "POST",
+                headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                prime: prime,
+                order: {
+                    price: bookingData.price,
+                    trip: {
+                        attraction: {
+                            id: bookingData.attraction.id,
+                            name: bookingData.attraction.name,
+                            address: bookingData.attraction.address,
+                            image: bookingData.attraction.image,
+                        },
+                        date: bookingData.date,
+                        time: bookingData.time
+                    },
+                    contact: {
+                        name: name,
+                        email: email,
+                        phone: phone
+                    }
+                }
+                })
+            });
+            const orderResult = await orderResponse.json();
+        
+            if (orderResult.data && orderResult.data.number) {
+                alert("付款成功");
+                window.location.href = `/thankyou?number=${orderResult.data.number}`;
+            } else {
+                alert(orderResult.message);
+            }
+            });
+        });
     }
 }
