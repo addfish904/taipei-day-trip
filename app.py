@@ -465,7 +465,6 @@ async def create_order(request: Request, token: str = Depends(oauth2_scheme)):
             json=payload
         )
         tappay_result = tappay_response.json()
-        print("TapPay 回傳：", tappay_result)
 
         # 根據付款結果更新訂單
         with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
@@ -499,7 +498,8 @@ async def create_order(request: Request, token: str = Depends(oauth2_scheme)):
             else:
                 return JSONResponse(status_code=400, content={"error": True, "message": "付款失敗，請重新確認信用卡資訊"})
 
-    except Exception:
+    except Exception as e:
+        print(f"伺服器錯誤：{e}")
         return JSONResponse(status_code=500, content={"error": True, "message": "伺服器內部錯誤"})
 
 @app.get("/api/order/{orderNumber}")
