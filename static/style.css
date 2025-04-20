@@ -431,6 +431,17 @@ input[type="date"] {
   padding: 10px;
   border-radius: 5px;
 }
+.tp-container {
+  display: flex;
+  align-items: center;
+}
+.tpfield {
+  height: 40px;
+  width: 200px;
+  border: 1px solid #e8e8e8;
+  padding: 10px;
+  border-radius: 5px;
+}
 h2 {
   font-size: 19px;
   font-weight: 700;

@@ -8,10 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer
 import jwt
-from jwt.exceptions import ExpiredSignatureError
 import bcrypt
 from datetime import datetime, timedelta
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+import uuid
+import requests
+
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -390,6 +392,161 @@ def delete_booking(token: str = Depends(oauth2_scheme)):
 	return {"ok": True}
 
 
+PARTNER_KEY = os.getenv('PARTNER_KEY')
+MERCHANT_ID = os.getenv('MERCHANT_ID')
+TAPPAY_API_URL = os.getenv('TAPPAY_API_URL')
+
+@app.post("/api/orders")
+async def create_order(request: Request, token: str = Depends(oauth2_scheme)):
+    try:
+        # 驗證 JWT
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("id")
+        if not user_id:
+            return JSONResponse(status_code=403, content={"error": True, "message": "未授權的存取"})
+
+        # 解析前端傳來的資料
+        data = await request.json()
+        prime = data["prime"]
+        order = data["order"]
+        amount = order["price"]
+        contact = order["contact"]
+        trip = order["trip"]
+
+        # 訂單編號
+        order_number = f"{uuid.uuid4().hex[:10].upper()}"
+
+        # TapPay API
+        payload = {
+            "prime": prime,
+            "partner_key": PARTNER_KEY,
+            "merchant_id": MERCHANT_ID,
+            "amount": amount,
+            "currency": "TWD",
+            "details": "旅遊行程付款",
+            "cardholder": {
+                "phone_number": contact["phone"],
+                "name": contact["name"],
+                "email": contact["email"]
+            },
+            "remember": False
+        }
+
+        # 儲存未付款訂單
+        with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
+            cursor.execute("""
+                INSERT INTO orders (
+                    order_number, amount, status,
+                    contact_name, contact_email, contact_phone,
+                    attraction_id, attraction_name, attraction_address, attraction_image,
+                    trip_date, trip_time
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                order_number, amount, "UNPAID",
+                contact["name"], contact["email"], contact["phone"],
+                trip["attraction"]["id"],
+                trip["attraction"]["name"],
+                trip["attraction"]["address"],
+                trip["attraction"]["image"],
+                trip["date"],
+                trip["time"]
+            ))
+            order_id = cursor.lastrowid
+            conn.commit()
+
+        # 呼叫 TapPay API
+        tappay_response = requests.post(
+            TAPPAY_API_URL,
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": PARTNER_KEY
+            },
+            json=payload
+        )
+        tappay_result = tappay_response.json()
+
+        # 根據付款結果更新訂單
+        with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
+            if tappay_result["status"] == 0:
+                cursor.execute("""
+                    UPDATE orders
+                    SET status = %s,
+                        rec_trade_id = %s,
+                        bank_transaction_id = %s
+                    WHERE id = %s
+                """, (
+                    "PAID",
+                    tappay_result.get("rec_trade_id"),
+                    tappay_result.get("bank_transaction_id"),
+                    order_id
+                ))
+
+                # 清除 booking
+                cursor.execute("DELETE FROM bookings WHERE member_id = %s", (user_id,))
+                conn.commit()
+
+                return {
+                    "data": {
+                        "number": order_number,
+                        "payment": {
+                            "status": 0,
+                            "message": "付款成功"
+                        }
+                    }
+                }
+            else:
+                return JSONResponse(status_code=400, content={"error": True, "message": "付款失敗，請重新確認信用卡資訊"})
+
+    except Exception as e:
+        print(f"伺服器錯誤：{e}")
+        return JSONResponse(status_code=500, content={"error": True, "message": "伺服器內部錯誤"})
+
+@app.get("/api/order/{orderNumber}")
+def get_order(orderNumber: str, token: str = Depends(oauth2_scheme)):
+
+	payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+	user_id = payload.get("id")
+	if not user_id:
+		return JSONResponse(status_code=403, content={"error": True, "message": "未授權的存取"})
+	
+	with db_pool.get_connection() as conn, conn.cursor(dictionary=True) as cursor:
+		cursor.execute("SELECT * FROM orders WHERE order_number = %s", (orderNumber,))
+		order = cursor.fetchone()
+
+	if not order:
+		return JSONResponse(content={"data": None})
+	
+	if order["status"] == "PAID":
+		status = 1
+	else:
+		status = 0
+
+	result = {
+		"data": {
+			"number": order["order_number"],
+			"price": order["amount"],
+			"trip": {
+				"attraction": {
+					"id": order["attraction_id"],
+					"name": order["attraction_name"],
+					"address": order["attraction_address"],
+					"image": order["attraction_image"]
+				},
+				"date": order["trip_date"].strftime("%Y-%m-%d"),
+				"time": order["trip_time"]
+			},
+			"contact": {
+				"name": order["contact_name"],
+				"email": order["contact_email"],
+				"phone": order["contact_phone"]
+			},
+			"status": status
+		}
+	}
+	return JSONResponse(content=result)
+
+
 
 # Static Pages (Never Modify Code in this Block)
 @app.get("/", include_in_schema=False)
@@ -403,6 +560,7 @@ async def attraction(request: Request, id: int):
 @app.get("/booking", include_in_schema=False)
 async def booking(request: Request):
 	return FileResponse("./static/booking.html", media_type="text/html")
-# @app.get("/thankyou", include_in_schema=False)
-# async def thankyou(request: Request):
-# 	return FileResponse("./static/thankyou.html", media_type="text/html")
+
+@app.get("/thankyou", include_in_schema=False)
+async def thankyou(request: Request):
+	return FileResponse("./static/thankyou.html", media_type="text/html")
